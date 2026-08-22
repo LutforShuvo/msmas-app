@@ -1,23 +1,9 @@
 import { appendRows, readRows } from "../../../lib/sheets";
-import { AR_ACCOUNT, AP_ACCOUNT, SALES_REVENUE, HEAD_OFFICE_STORE_ID } from "../../../lib/schema";
+import { HEAD_OFFICE_STORE_ID } from "../../../lib/schema";
+import { resolveControlAccounts } from "../../../lib/accounts";
 
 function newId(prefix) {
   return `${prefix}${Date.now()}${Math.floor(Math.random() * 100)}`;
-}
-
-function buildLine(txnId, { accountId, accountName, storeId, debit = 0, credit = 0, partyType = "", partyId = "", note = "" }) {
-  return [
-    newId("L"),
-    txnId,
-    accountId,
-    accountName || "",
-    storeId || "",
-    debit || "",
-    credit || "",
-    partyType,
-    partyId,
-    note,
-  ];
 }
 
 export async function POST(req) {
@@ -28,6 +14,29 @@ export async function POST(req) {
     const now = new Date().toISOString();
     const coa = await readRows("coa!A2:D");
     const nameFor = (id) => (coa.find((r) => String(r[0]) === String(id)) || {})[1] || id;
+    const { salesRevenue, ar, ap } = resolveControlAccounts(coa);
+    if (!salesRevenue || !ar || !ap) {
+      const missing = [!salesRevenue && "Sales Revenue", !ar && "Accounts Receivable", !ap && "Accounts Payable"].filter(Boolean).join(", ");
+      return Response.json(
+        { ok: false, error: `Could not find "${missing}" in your coa tab — check the account name(s) match exactly.` },
+        { status: 500 }
+      );
+    }
+
+    function buildLine(txnId, { accountId, accountName, storeId, debit = 0, credit = 0, partyType = "", partyId = "", note: lineNote }) {
+      return [
+        newId("L"),
+        txnId,
+        accountId,
+        accountName || "",
+        storeId || "",
+        debit || "",
+        credit || "",
+        partyType,
+        partyId,
+        lineNote ?? note ?? "",
+      ];
+    }
 
     let lines = [];
     let typeLabel;
@@ -37,8 +46,8 @@ export async function POST(req) {
       typeLabel = "Sale";
       lines.push(
         buildLine(txnId, {
-          accountId: onCredit ? AR_ACCOUNT.id : method,
-          accountName: onCredit ? AR_ACCOUNT.name : nameFor(method),
+          accountId: onCredit ? ar.id : method,
+          accountName: onCredit ? ar.name : nameFor(method),
           storeId: store,
           debit: amount,
           partyType: onCredit ? "Customer" : "",
@@ -46,13 +55,13 @@ export async function POST(req) {
         })
       );
       lines.push(
-        buildLine(txnId, { accountId: SALES_REVENUE.id, accountName: SALES_REVENUE.name, storeId: store, credit: amount })
+        buildLine(txnId, { accountId: salesRevenue.id, accountName: salesRevenue.name, storeId: store, credit: amount })
       );
     } else if (type === "expense") {
       const { category, amount, onCredit, method, vendorId, shared, store, splits } = body;
       typeLabel = "Expense";
       const creditLine = onCredit
-        ? { accountId: AP_ACCOUNT.id, accountName: AP_ACCOUNT.name, partyType: "Vendor", partyId: vendorId }
+        ? { accountId: ap.id, accountName: ap.name, partyType: "Vendor", partyId: vendorId }
         : { accountId: method, accountName: nameFor(method) };
 
       if (shared) {
@@ -78,12 +87,12 @@ export async function POST(req) {
 
       lines.push(
         toKind === "vendor"
-          ? buildLine(txnId, { accountId: AP_ACCOUNT.id, accountName: AP_ACCOUNT.name, storeId: txnStore, debit: amount, partyType: "Vendor", partyId: toId })
+          ? buildLine(txnId, { accountId: ap.id, accountName: ap.name, storeId: txnStore, debit: amount, partyType: "Vendor", partyId: toId })
           : buildLine(txnId, { accountId: toId, accountName: nameFor(toId), storeId: txnStore, debit: amount })
       );
       lines.push(
         fromKind === "customer"
-          ? buildLine(txnId, { accountId: AR_ACCOUNT.id, accountName: AR_ACCOUNT.name, storeId: txnStore, credit: amount, partyType: "Customer", partyId: fromId })
+          ? buildLine(txnId, { accountId: ar.id, accountName: ar.name, storeId: txnStore, credit: amount, partyType: "Customer", partyId: fromId })
           : buildLine(txnId, { accountId: fromId, accountName: nameFor(fromId), storeId: txnStore, credit: amount })
       );
     } else {

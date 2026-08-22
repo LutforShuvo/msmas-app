@@ -50,13 +50,24 @@ export default function EntryForm() {
       .then((r) => r.json())
       .then((data) => {
         if (!data.ok) return;
-        setLookups(data);
-        if (data.stores[0]) {
-          setSaleStore(data.stores[0].id);
-          setExpStore(data.stores[0].id);
+        const normalized = {
+          stores: data.stores.map((s) => ({ ...s, id: String(s.id) })),
+          customers: data.customers.map((c) => ({ ...c, id: String(c.id) })),
+          vendors: data.vendors.map((v) => ({ ...v, id: String(v.id) })),
+          accounts: data.accounts.map((a) => ({
+            ...a,
+            id: String(a.id),
+            accountType: (a.accountType || "").trim(),
+            accountClass: (a.accountClass || "").trim(),
+          })),
+        };
+        setLookups(normalized);
+        if (normalized.stores[0]) {
+          setSaleStore(normalized.stores[0].id);
+          setExpStore(normalized.stores[0].id);
         }
-        const cashAccounts = data.accounts.filter((a) => CASH_CLASSES.includes(a.accountClass));
-        const expenseAccounts = data.accounts.filter((a) => a.accountType === "Expense");
+        const cashAccounts = normalized.accounts.filter((a) => CASH_CLASSES.includes(a.accountClass));
+        const expenseAccounts = normalized.accounts.filter((a) => a.accountType === "Expense");
         if (cashAccounts[0]) {
           setSaleMethod(cashAccounts[0].id);
           setExpMethod(cashAccounts[0].id);
@@ -64,17 +75,26 @@ export default function EntryForm() {
           setToId(cashAccounts[0].id);
         }
         if (expenseAccounts[0]) setCategory(expenseAccounts[0].id);
-        if (data.vendors[0]) setExpVendorId(data.vendors[0].id);
+        if (normalized.vendors[0]) setExpVendorId(normalized.vendors[0].id);
       })
       .catch(() => {});
   }, []);
 
+  function dedupeById(list) {
+    const seen = new Set();
+    return list.filter((a) => {
+      if (seen.has(a.id)) return false;
+      seen.add(a.id);
+      return true;
+    });
+  }
+
   const cashAccounts = useMemo(
-    () => lookups.accounts.filter((a) => CASH_CLASSES.includes(a.accountClass)),
+    () => dedupeById(lookups.accounts.filter((a) => CASH_CLASSES.includes(a.accountClass))),
     [lookups.accounts]
   );
   const expenseAccounts = useMemo(
-    () => lookups.accounts.filter((a) => a.accountType === "Expense"),
+    () => dedupeById(lookups.accounts.filter((a) => a.accountType === "Expense")),
     [lookups.accounts]
   );
 
@@ -152,6 +172,7 @@ export default function EntryForm() {
   async function submit() {
     setSubmitting(true);
     setToast(null);
+    const summaryAtSubmit = s.text;
     let payload = { type, date, note };
     if (type === "sale") {
       payload = { ...payload, store: saleStore, amount: Number(saleAmount), onCredit, method: saleMethod, customerId };
@@ -187,7 +208,7 @@ export default function EntryForm() {
       });
       const data = await res.json();
       if (data.ok) {
-        setToast({ ok: true, text: `Saved as ${data.txnId}.` });
+        setToast({ ok: true, text: `${summaryAtSubmit} (Saved as ${data.txnId})` });
         setSaleAmount("");
         setExpAmount("");
         setTransferAmount("");
@@ -417,7 +438,12 @@ export default function EntryForm() {
         {submitting ? "Saving…" : "Submit transaction"}
       </button>
 
-      {toast && <div className={`toast ${toast.ok ? "ok" : "error"}`}>{toast.text}</div>}
+      {toast && (
+        <div className={`toast ${toast.ok ? "ok" : "error"}`}>
+          {toast.ok && <span className="icon">✓</span>}
+          <span>{toast.text}</span>
+        </div>
+      )}
     </div>
   );
 }

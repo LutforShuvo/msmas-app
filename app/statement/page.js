@@ -169,28 +169,21 @@ export default function StatementPage() {
               {data.rows.length === 0 ? (
                 <p className="summary">No transactions in this date range.</p>
               ) : (
-                <table className="entry-lines">
-                  <thead>
-                    <tr>
-                      <td className="muted">Date</td>
-                      <td className="muted">Description</td>
-                      <td className="muted num">Debit</td>
-                      <td className="muted num">Credit</td>
-                      <td className="muted num">Balance</td>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.rows.map((r, i) => (
-                      <tr key={i}>
-                        <td>{r.date}</td>
-                        <td>{r.desc}</td>
-                        <td className="num">{r.debit ? r.debit.toLocaleString() : ""}</td>
-                        <td className="num">{r.credit ? r.credit.toLocaleString() : ""}</td>
-                        <td className="num" style={{ fontWeight: 500 }}>{fmt(r.balance)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="statement-rows">
+                  {data.rows.map((r, i) => (
+                    <div className="statement-row" key={i}>
+                      <div className="sr-top">
+                        <span className="sr-date">{r.date}</span>
+                        <span className="sr-balance">{fmt(r.balance)}</span>
+                      </div>
+                      <div className="sr-bottom">
+                        <span className="sr-desc">{r.desc || "—"}</span>
+                        {r.debit > 0 && <span className="sr-amount sr-debit">+{r.debit.toLocaleString()}</span>}
+                        {r.credit > 0 && <span className="sr-amount sr-credit">−{r.credit.toLocaleString()}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
