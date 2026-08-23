@@ -1,5 +1,6 @@
 import "./globals.css";
-import Sidebar from "./components/Sidebar";
+import SessionProviderWrapper from "./components/SessionProviderWrapper";
+import AppShell from "./components/AppShell";
 
 export const metadata = {
   title: "MSMAS — Entry",
@@ -10,10 +11,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <div className="app-shell">
-          <Sidebar />
-          <div className="app-content">{children}</div>
-        </div>
+        <SessionProviderWrapper>
+          <AppShell>{children}</AppShell>
+        </SessionProviderWrapper>
       </body>
     </html>
   );

@@ -1,6 +1,8 @@
 import { appendRows, readRows } from "../../../lib/sheets";
 import { HEAD_OFFICE_STORE_ID } from "../../../lib/schema";
 import { resolveControlAccounts } from "../../../lib/accounts";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic"; // never cache — always read the live Sheet
 
@@ -14,8 +16,13 @@ const TYPE_CODE = {
 
 export async function POST(req) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.role || !["admin", "entry"].includes(session.user.role)) {
+      return Response.json({ ok: false, error: "You don't have permission to create entries." }, { status: 403 });
+    }
+
     const body = await req.json();
-    const { type, date, note, userId } = body;
+    const { type, date, note } = body;
     const now = new Date().toISOString();
 
     const [coa, existingTxnRows] = await Promise.all([
@@ -122,7 +129,7 @@ export async function POST(req) {
       );
     }
 
-    await appendRows("transaction!A:G", [[txnId, date, typeLabel, note || "", userId || "", now, "posted"]]);
+    await appendRows("transaction!A:G", [[txnId, date, typeLabel, note || "", session.user.userId || session.user.email, now, "draft"]]);
     await appendRows("line!A:J", lines);
 
     return Response.json({ ok: true, txnId });

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 const NAV_ITEMS = [
-  { href: "/", label: "New Entry", icon: "add" },
-  { href: "/entries", label: "Recent Entries", icon: "list" },
-  { href: "/statement", label: "Account Statement", icon: "search" },
-  { href: "/financials", label: "Financial Statements", icon: "doc" },
-  { href: "/dashboard", label: "Dashboard", icon: "chart" },
+  { href: "/", label: "New Entry", icon: "add", roles: ["admin", "entry"] },
+  { href: "/entries", label: "Approvals", icon: "list", roles: ["admin", "entry", "viewer"] },
+  { href: "/statement", label: "Account Statement", icon: "search", roles: ["admin", "viewer"] },
+  { href: "/financials", label: "Financial Statements", icon: "doc", roles: ["admin", "viewer"] },
+  { href: "/dashboard", label: "Dashboard", icon: "chart", roles: ["admin", "viewer"] },
 ];
 
 function Icon({ name }) {
@@ -29,11 +30,15 @@ function Icon({ name }) {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+  const visibleItems = NAV_ITEMS.filter((item) => !role || item.roles.includes(role));
+
   return (
     <nav className="sidebar">
       <div className="sidebar-brand">MSMAS</div>
       <ul className="sidebar-nav">
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const active = pathname === item.href;
           return (
             <li key={item.href}>
@@ -46,13 +51,25 @@ export default function Sidebar() {
         })}
       </ul>
       <div className="sidebar-footer">
+        {session?.user && (
+          <div className="sidebar-user">
+            <div className="sidebar-user-name">{session.user.name}</div>
+            <div className="sidebar-user-row">
+              <span className="role-badge">{role}</span>
+              <button className="sidebar-signout" onClick={() => signOut({ callbackUrl: "/signin" })}>
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
         <a
           href="https://www.linkedin.com/in/lutforr/"
           target="_blank"
           rel="noopener noreferrer"
           className="sidebar-footer-link"
         >
-          <span>© Developed by Lutfor</span>
+          <Icon name="external" />
+          <span>Connect on LinkedIn</span>
         </a>
       </div>
     </nav>

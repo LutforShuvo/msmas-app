@@ -236,6 +236,27 @@ input:focus, select:focus {
   padding-top: 12px;
   border-top: 0.5px solid rgba(255, 255, 255, 0.14);
 }
+.sidebar-user { padding: 6px 12px 10px; }
+.sidebar-user-name { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.sidebar-user-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.role-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+}
+.sidebar-signout {
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+.sidebar-signout:hover { color: #fff; text-decoration: underline; }
 .sidebar-footer-link {
   display: flex;
   align-items: center;
@@ -282,6 +303,20 @@ input:focus, select:focus {
 }
 .entry-status.posted { background: var(--success-bg); color: var(--success-text); }
 .entry-note { font-size: 13px; color: var(--text-muted); margin: 0 0 10px; }
+.entry-summary { font-size: 14px; color: var(--text); margin: 0 0 8px; line-height: 1.45; }
+.approve-btn {
+  border: none;
+  background: var(--success-text);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.approve-btn:hover { opacity: 0.9; }
+.approve-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .entry-lines { width: 100%; border-collapse: collapse; font-size: 13px; }
 .entry-lines td { padding: 4px 0; border-top: 1px solid var(--border); }
 .entry-lines tr:first-child td { border-top: none; }

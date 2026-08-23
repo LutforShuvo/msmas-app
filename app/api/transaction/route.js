@@ -1,5 +1,7 @@
 import { readRows, updateRow, clearRanges, appendRows } from "../../../lib/sheets";
 import { toNumber, sheetDateToISO } from "../../../lib/format";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic"; // never cache — always read the live Sheet
 
@@ -48,6 +50,11 @@ export async function GET(req) {
 
 export async function PUT(req) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.role || !["admin", "entry"].includes(session.user.role)) {
+      return Response.json({ ok: false, error: "You don't have permission to edit entries." }, { status: 403 });
+    }
+
     const body = await req.json();
     const { txnId, date, note, status, lines } = body;
     if (!txnId || !Array.isArray(lines) || lines.length < 2) {
