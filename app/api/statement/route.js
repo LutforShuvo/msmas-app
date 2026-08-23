@@ -1,6 +1,8 @@
 import { readRows } from "../../../lib/sheets";
 import { toNumber, sheetDateToISO } from "../../../lib/format";
 
+export const dynamic = "force-dynamic"; // never cache — always read the live Sheet
+
 // kind: "account" | "customer" | "vendor"
 // Accounts with a normal CREDIT balance (Liability, Equity, Revenue) and
 // vendors (money we owe) are displayed with the sign flipped, so a

@@ -2,6 +2,8 @@ import { readRows } from "../../../lib/sheets";
 import { toNumber, sheetDateToISO } from "../../../lib/format";
 import { resolveControlAccounts } from "../../../lib/accounts";
 
+export const dynamic = "force-dynamic"; // never cache — always read the live Sheet
+
 const CASH_CLASSES = new Set(["Bank", "Cash & Cash Equivalent"]);
 
 function bucketForCashMove(otherLines, arId, apId) {

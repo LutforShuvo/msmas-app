@@ -1,6 +1,8 @@
 import { readRows, updateRow, clearRanges, appendRows } from "../../../lib/sheets";
 import { toNumber, sheetDateToISO } from "../../../lib/format";
 
+export const dynamic = "force-dynamic"; // never cache — always read the live Sheet
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
@@ -42,10 +44,6 @@ export async function GET(req) {
     console.error(err);
     return Response.json({ ok: false, error: err.message }, { status: 500 });
   }
-}
-
-function newId(prefix) {
-  return `${prefix}${Date.now()}${Math.floor(Math.random() * 100)}`;
 }
 
 export async function PUT(req) {
@@ -94,8 +92,8 @@ export async function PUT(req) {
       await clearRanges(oldLineRowNumbers.map((r) => `line!A${r}:J${r}`));
     }
 
-    const newLines = lines.map((l) => [
-      newId("L"),
+    const newLines = lines.map((l, i) => [
+      `${txnId}-L${i + 1}`,
       txnId,
       l.accountId,
       nameFor(l.accountId),

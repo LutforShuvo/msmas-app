@@ -1,6 +1,8 @@
 import { readRows } from "../../../lib/sheets";
 import { toNumber } from "../../../lib/format";
 
+export const dynamic = "force-dynamic"; // never cache — always read the live Sheet
+
 const CREDIT_NORMAL_TYPES = new Set(["Liability", "Equity", "Revenue"]);
 
 export async function GET(req) {

@@ -1,5 +1,7 @@
 import { readRows } from "../../../lib/sheets";
 
+export const dynamic = "force-dynamic"; // never cache — always read the live Sheet
+
 export async function GET() {
   try {
     const [stores, customers, vendors, coa] = await Promise.all([

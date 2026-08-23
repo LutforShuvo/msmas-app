@@ -1,6 +1,8 @@
 import { readRows } from "../../../lib/sheets";
 import { toNumber, sheetDateToISO } from "../../../lib/format";
 
+export const dynamic = "force-dynamic"; // never cache — always read the live Sheet
+
 function monthKey(iso) {
   return iso ? iso.slice(0, 7) : "";
 }
