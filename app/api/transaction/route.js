@@ -81,23 +81,10 @@ export async function PUT(req) {
     const existing = txnRows[txnIdx];
     const sheetRow = txnIdx + 2; // +2: header row + 1-indexing
 
-    await updateRow(`transaction!A${sheetRow}:G${sheetRow}`, [
-      existing[0],
-      date,
-      existing[2],
-      note || "",
-      existing[4],
-      existing[5],
-      status,
-    ]);
-
     const oldLineRowNumbers = [];
     lineRows.forEach((l, i) => {
       if (l[1] === txnId) oldLineRowNumbers.push(i + 2);
     });
-    if (oldLineRowNumbers.length) {
-      await clearRanges(oldLineRowNumbers.map((r) => `line!A${r}:J${r}`));
-    }
 
     const newLines = lines.map((l, i) => [
       `${txnId}-L${i + 1}`,
@@ -111,7 +98,19 @@ export async function PUT(req) {
       l.partyId || "",
       "",
     ]);
-    await appendRows("line!A:J", newLines);
+
+    // These three writes touch different rows/ranges and don't depend on
+    // each other's results — running them together instead of one after
+    // another cuts real time off every edit.
+    await Promise.all([
+      updateRow(`transaction!A${sheetRow}:G${sheetRow}`, [
+        existing[0], date, existing[2], note || "", existing[4], existing[5], status,
+      ]),
+      oldLineRowNumbers.length
+        ? clearRanges(oldLineRowNumbers.map((r) => `line!A${r}:J${r}`))
+        : Promise.resolve(),
+      appendRows("line!A:J", newLines),
+    ]);
 
     return Response.json({ ok: true });
   } catch (err) {

@@ -129,8 +129,10 @@ export async function POST(req) {
       );
     }
 
-    await appendRows("transaction!A:G", [[txnId, date, typeLabel, note || "", session.user.userId || session.user.email, now, "draft"]]);
-    await appendRows("line!A:J", lines);
+    await Promise.all([
+      appendRows("transaction!A:G", [[txnId, date, typeLabel, note || "", session.user.userId || session.user.email, now, "draft"]]),
+      appendRows("line!A:J", lines),
+    ]);
 
     return Response.json({ ok: true, txnId });
   } catch (err) {
