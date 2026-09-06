@@ -3,6 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 
+// Uses the browser's own local date, not UTC — fixes the range silently
+// excluding "today" during Bangladesh's early morning hours when the
+// server's UTC clock is still on the previous calendar day.
+function todayLocal() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function firstOfMonthLocal() {
+  return todayLocal().slice(0, 8) + "01";
+}
+
 function fmt(n) {
   const v = Math.round(Number(n) || 0);
   const sign = v < 0 ? "-" : "";
@@ -13,8 +24,8 @@ const COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#898781"
 
 export default function DashboardPage() {
   const [lookups, setLookups] = useState({ stores: [] });
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState(firstOfMonthLocal);
+  const [to, setTo] = useState(todayLocal);
   const [store, setStore] = useState("all");
   const [type, setType] = useState("all");
   const [includeDrafts, setIncludeDrafts] = useState(false);

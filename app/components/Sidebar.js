@@ -6,6 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 
 const NAV_ITEMS = [
   { href: "/", label: "New Entry", icon: "add", roles: ["admin", "entry"] },
+  { href: "/journal", label: "Journal Entry", icon: "pencil", roles: ["admin", "entry"] },
   { href: "/entries", label: "Approvals", icon: "list", roles: ["admin", "entry", "viewer"] },
   { href: "/statement", label: "Account Statement", icon: "search", roles: ["admin", "viewer"] },
   { href: "/financials", label: "Financial Statements", icon: "doc", roles: ["admin", "viewer"] },
@@ -20,6 +21,7 @@ function Icon({ name }) {
     search: <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></>,
     doc: <><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6" /><path d="M9 13h6M9 17h6" /></>,
     external: <><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><path d="M15 3h6v6" /><path d="M10 14L21 3" /></>,
+    pencil: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></>,
   };
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

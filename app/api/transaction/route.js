@@ -48,6 +48,70 @@ export async function GET(req) {
   }
 }
 
+export async function POST(req) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.role || !["admin", "entry"].includes(session.user.role)) {
+      return Response.json({ ok: false, error: "You don't have permission to create entries." }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { date, note, lines } = body;
+    if (!date) return Response.json({ ok: false, error: "Missing date" }, { status: 400 });
+    if (!Array.isArray(lines) || lines.length < 2) {
+      return Response.json({ ok: false, error: "A journal entry needs at least 2 lines" }, { status: 400 });
+    }
+    const totalDebit = lines.reduce((s, l) => s + Number(l.debit || 0), 0);
+    const totalCredit = lines.reduce((s, l) => s + Number(l.credit || 0), 0);
+    if (totalDebit !== totalCredit || totalDebit === 0) {
+      return Response.json(
+        { ok: false, error: `Debit total ${totalDebit} does not match credit total ${totalCredit}` },
+        { status: 400 }
+      );
+    }
+    if (lines.some((l) => !l.accountId)) {
+      return Response.json({ ok: false, error: "Every line needs an account selected" }, { status: 400 });
+    }
+
+    const [coaRows, existingTxnRows] = await Promise.all([
+      readRows("coa!A2:D"),
+      readRows("transaction!A2:A"),
+    ]);
+    const nameFor = (id) => (coaRows.find((r) => String(r[0]) === String(id)) || {})[1] || id;
+
+    // Same readable-ID scheme as everywhere else: JNL-20260825-01
+    const dateCompact = date.replace(/-/g, "");
+    const idPrefix = `JNL-${dateCompact}`;
+    const existingIds = existingTxnRows.map((r) => r[0]).filter(Boolean);
+    const sameDayCount = existingIds.filter((id) => id.startsWith(idPrefix)).length;
+    const txnId = `${idPrefix}-${String(sameDayCount + 1).padStart(2, "0")}`;
+    const now = new Date().toISOString();
+
+    const lineRows = lines.map((l, i) => [
+      `${txnId}-L${i + 1}`,
+      txnId,
+      l.accountId,
+      nameFor(l.accountId),
+      l.storeId || "",
+      l.debit || "",
+      l.credit || "",
+      l.partyType || "",
+      l.partyId || "",
+      "",
+    ]);
+
+    await Promise.all([
+      appendRows("transaction!A:G", [[txnId, date, "Journal Entry", note || "", session.user.userId || session.user.email, now, "draft"]]),
+      appendRows("line!A:J", lineRows),
+    ]);
+
+    return Response.json({ ok: true, txnId });
+  } catch (err) {
+    console.error(err);
+    return Response.json({ ok: false, error: err.message }, { status: 500 });
+  }
+}
+
 export async function PUT(req) {
   try {
     const session = await getServerSession(authOptions);

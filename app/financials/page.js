@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+function todayLocal() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function firstOfMonthLocal() {
+  return todayLocal().slice(0, 8) + "01";
+}
+
 function fmt(n) {
   const v = Math.round(Number(n) || 0);
   const sign = v < 0 ? "-" : "";
@@ -19,8 +27,8 @@ function Row({ label, value, bold, indent }) {
 
 export default function FinancialsPage() {
   const [lookups, setLookups] = useState({ stores: [] });
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState(firstOfMonthLocal);
+  const [to, setTo] = useState(todayLocal);
   const [store, setStore] = useState("all");
   const [includeDrafts, setIncludeDrafts] = useState(false);
   const [tab, setTab] = useState("income");
@@ -50,7 +58,7 @@ export default function FinancialsPage() {
       <h2 className="page-title">Financial Statements</h2>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+        <div className="filter-grid-3">
           <div className="field">
             <label>From</label>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
